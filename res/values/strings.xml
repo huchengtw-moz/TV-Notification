@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Notifications to TV</string>
+    <string name="start_button">Start TV Service</string>
+    <string name="stop_button">Stop TV Service</string>
+    <string name="auto_first">Auto Connect</string>
+    <string name="connect_button">Connect</string>
+    <string name="device_list_title">Device Lists</string>
+
+</resources>
