@@ -340,12 +340,14 @@ public class TVConn {
     tv.remoteAddress = packet.getAddress();
     tv.remotePort = obj.getJSONObject("services").getJSONObject("presentation").getInt("port");
     int idx = deviceList.indexOf(tv);
-    Log.d(TAG, "device idx: " + idx);
     if (idx > -1) {
+      TVDevice tv2 = deviceList.get(idx);
       // update last pinged if this device is in list.
-      deviceList.get(idx).lastPinged = System.currentTimeMillis();
-      // Log.d(TAG, "Device: " + tv.name + " TTL updated: " +
-      // System.currentTimeMillis());
+      tv2.lastPinged = System.currentTimeMillis();
+      if (!tv2.name.equals(tv.name)) {
+        tv2.name = tv.name;
+        fireStateUpate(tv2);
+      }
     } else {
       tv.lastPinged = System.currentTimeMillis();
       deviceList.add(tv);
