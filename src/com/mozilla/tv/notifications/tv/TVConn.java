@@ -285,13 +285,16 @@ public class TVConn {
       public void run() {
         Log.i(TAG, "try to disconnect to device: " + connectedDevice.name);
 
-        synchronized (TVConn.class) {
-          connectedDevice.state = TVDevice.State.SCANNED;
-        }
-        fireStateUpate(connectedDevice);
         try {
           DatagramPacket req = createSessionClosePacket(connectedDevice, url);
           udpSocket.send(req);
+          TVDevice cDevice = connectedDevice;
+          synchronized (TVConn.class) {
+            connectedDevice.state = TVDevice.State.SCANNED;
+            connectedDevice.channelMap.remove(url);
+            connectedDevice = null;
+          }
+          fireStateUpate(cDevice);
         } catch (IOException e) {
           e.printStackTrace();
         }
