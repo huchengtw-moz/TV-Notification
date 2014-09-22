@@ -19,7 +19,6 @@ public class TVDevice {
   public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + ((name == null) ? 0 : name.hashCode());
     result = prime * result + ((remoteAddress == null) ? 0 : remoteAddress.hashCode());
     result = prime * result + remotePort;
     return result;
@@ -34,11 +33,6 @@ public class TVDevice {
     if (getClass() != obj.getClass())
       return false;
     TVDevice other = (TVDevice) obj;
-    if (name == null) {
-      if (other.name != null)
-        return false;
-    } else if (!name.equals(other.name))
-      return false;
     if (remoteAddress == null) {
       if (other.remoteAddress != null)
         return false;
