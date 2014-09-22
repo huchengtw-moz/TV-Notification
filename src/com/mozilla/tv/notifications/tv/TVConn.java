@@ -38,9 +38,9 @@ public class TVConn {
   private static final int SCAN_PORT = 50624;
   private static final int UPDATE_PORT = 50625;
   private static final byte ADDRESS[] = { (byte) 224, 0, 0, 115 };
-  private static final int BROADCAST_INTERVAL = 3000;
-  private static final int DEVICE_TTL = 6000;
-  private static final String REMOTE_URL = "http://people.mozilla.org/~schien/presentation-demo/secondary.html";
+  private static final int BROADCAST_INTERVAL = 2000;
+  private static final int DEVICE_TTL = 5000;
+  private static final String REMOTE_URL = "app://tv-notification-receiver.gaiamobile.org/index.html";
 
   private static TVConn instance;
 
@@ -340,6 +340,7 @@ public class TVConn {
     tv.remoteAddress = packet.getAddress();
     tv.remotePort = obj.getJSONObject("services").getJSONObject("presentation").getInt("port");
     int idx = deviceList.indexOf(tv);
+    Log.d(TAG, "device idx: " + idx);
     if (idx > -1) {
       // update last pinged if this device is in list.
       deviceList.get(idx).lastPinged = System.currentTimeMillis();
@@ -365,7 +366,7 @@ public class TVConn {
         MulticastSocket scanSocket = null;
         try {
           InetAddress groupAddr = InetAddress.getByAddress(ADDRESS);
-          scanSocket = new MulticastSocket(SCAN_PORT);
+          scanSocket = new MulticastSocket(UPDATE_PORT);
           scanSocket.setSoTimeout(1000);
           scanSocket.joinGroup(groupAddr);
 
