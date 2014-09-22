@@ -27,13 +27,20 @@ public class IntentUtils {
 
   public static void sendTVIntent(Context ctx, String type, String body,
           String sender, String number) {
+    sendTVIntent(ctx, REMOTE_URL, type, body, sender, number);
+  }
+
+  public static void sendTVIntent(Context ctx, String url, String type, String body,
+          String sender, String number) {
     Intent i = new Intent(ctx, TVBridgeService.class);
-    i.putExtra("url", REMOTE_URL);
+    i.putExtra("url", url);
     i.putExtra("type", type);
     if (null != sender) {
       i.putExtra("sender", sender);
     }
-    i.putExtra("number", number);
+    if (null != number) {
+      i.putExtra("number", number);
+    }
     if (null != sender) {
       i.putExtra("body", body);
     }

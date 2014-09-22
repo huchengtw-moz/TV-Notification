@@ -1,6 +1,7 @@
 package com.mozilla.tv.notifications;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -47,6 +48,9 @@ public class MainActivity extends Activity {
     autoConnect = (CheckBox) this.findViewById(R.id.auto_first);
     connectButton = (Button) this.findViewById(R.id.connect_button);
     deviceListTitle = (TextView) this.findViewById(R.id.device_list_title);
+    if (tvServiceRunning) {
+      autoConnect.setChecked(TVConn.get().isAutoConnect());
+    }
     initAdapter();
   }
 
@@ -125,4 +129,14 @@ public class MainActivity extends Activity {
     autoConnect.setEnabled(tvServiceRunning);
   }
 
+  @Override
+  protected void onStart() {
+    super.onStart();
+    if (null != getIntent()) {
+      String url = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+      if (null != url) {
+        IntentUtils.sendTVIntent(this, url, "fling", null, null, null);
+      }
+    }
+  }
 }

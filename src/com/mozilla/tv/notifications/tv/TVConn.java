@@ -162,6 +162,7 @@ public class TVConn {
       connectedDevice = null;
     }
 
+    pendingQueue.clear();
     deviceList.clear();
     fireListUpate(new TVDevice[0]);
   }
@@ -210,6 +211,9 @@ public class TVConn {
         }
         connectToDevice(deviceList.firstElement(), url);
       }
+      return;
+    } else if (isConnected() && !connectedDevice.channelMap.containsKey(url)) {
+      connectToDevice(connectedDevice, url);
       return;
     }
 
@@ -320,11 +324,13 @@ public class TVConn {
           connectingDevice.state = TVDevice.State.SCANNED;
           fireStateUpate(connectingDevice);
         }
-        synchronized (TVConn.class) {
-          connectingDevice = device;
-          connectingDevice.state = TVDevice.State.CONNECTING;
+        if (!device.equals(connectedDevice)) {
+          synchronized (TVConn.class) {
+            connectingDevice = device;
+            connectingDevice.state = TVDevice.State.CONNECTING;
+          }
+          fireStateUpate(connectingDevice);
         }
-        fireStateUpate(connectingDevice);
         try {
           DatagramPacket req = createRequestSessionPacket(device, url);
           Log.d(TAG, "send");
