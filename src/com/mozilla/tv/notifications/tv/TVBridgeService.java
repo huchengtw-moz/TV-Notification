@@ -28,7 +28,7 @@ public class TVBridgeService extends IntentService {
       if (arg0.hasExtra("body")) {
         jsObj.put("body", arg0.getStringExtra("body"));
       }
-      TVConn.get().send(jsObj.toString());
+      TVConn.get().send(jsObj.toString(), arg0.getStringExtra("url"));
     } catch (JSONException e) {
       e.printStackTrace();
     }

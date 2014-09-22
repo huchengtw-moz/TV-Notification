@@ -85,15 +85,12 @@ public class MainActivity extends Activity {
         }
 
         if (device.equals(TVConn.get().getConnectedDevice())) {
-          TVConn.get().disconnect();
-          connectButton.setText(R.string.connect_button);
+          TVConn.get().disconnect(IntentUtils.REMOTE_URL);
         } else if (TVConn.get().isConnected()) {
-          TVConn.get().disconnect();
-          TVConn.get().connectToDevice(device);
-          connectButton.setText(R.string.disconnect_button);
+          TVConn.get().disconnect(IntentUtils.REMOTE_URL);
+          TVConn.get().connectToDevice(device, IntentUtils.REMOTE_URL);
         } else {
-          TVConn.get().connectToDevice(device);
-          connectButton.setText(R.string.disconnect_button);
+          TVConn.get().connectToDevice(device, IntentUtils.REMOTE_URL);
         }
       }
     });

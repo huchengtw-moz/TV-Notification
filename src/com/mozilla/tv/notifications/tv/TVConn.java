@@ -11,6 +11,7 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.Hashtable;
 import java.util.Vector;
 
 import org.json.JSONException;
@@ -41,8 +42,7 @@ public class TVConn {
   private static final int UPDATE_PORT = 50625;
   private static final byte ADDRESS[] = { (byte) 224, 0, 0, 115 };
   private static final int BROADCAST_INTERVAL = 2000;
-  private static final int DEVICE_TTL = 5000;
-  private static final String REMOTE_URL = "app://tv-notification-receiver.gaiamobile.org/index.html";
+  private static final int DEVICE_TTL = 20000;
 
   private static TVConn instance;
 
@@ -67,7 +67,7 @@ public class TVConn {
   private TVDevice connectedDevice;
   private boolean selfBroadcasting;
   private Vector<TVDevice> deviceList = new Vector<TVDevice>();
-  private Vector<String> pendingQueue = new Vector<String>();
+  private Hashtable<String, Vector<String>> pendingQueue = new Hashtable<String, Vector<String>>();
   private ArrayList<Listener> listenerList = new ArrayList<Listener>();
   private boolean autoConnect = false;
 
@@ -195,14 +195,20 @@ public class TVConn {
     }
   }
 
-  public void send(final String data) {
+  public void send(final String data, final String url) {
     // if start() hasn't called, the udpSocket will be null.
     if (null == udpSocket) {
       return;
     } else if (!isConnected()) {
       if (deviceList.size() > 0 && isAutoConnect()) {
-        pendingQueue.add(data);
-        connectToDevice(deviceList.firstElement());
+        if (pendingQueue.containsKey(url)) {
+          pendingQueue.get(url).add(data);
+        } else {
+          Vector<String> pending = new Vector<String>();
+          pending.add(data);
+          pendingQueue.put(url, pending);
+        }
+        connectToDevice(deviceList.firstElement(), url);
       }
       return;
     }
@@ -212,7 +218,7 @@ public class TVConn {
       @Override
       public void run() {
         try {
-          DatagramPacket packet = createDataPacket(data, REMOTE_URL);
+          DatagramPacket packet = createDataPacket(data, url);
           udpSocket.send(packet);
         } catch (IOException e) {
           e.printStackTrace();
@@ -225,11 +231,18 @@ public class TVConn {
     t.start();
   }
 
-  private void flashQueue() {
-    while (pendingQueue.size() > 0) {
-      String data = pendingQueue.firstElement();
-      pendingQueue.remove(data);
-      send(data);
+  private void flashQueue(String url) {
+    if (!pendingQueue.containsKey(url)) {
+      return;
+    }
+    Vector<String> pending = pendingQueue.get(url);
+    if (null == pending) {
+      return;
+    }
+    String[] list = pending.toArray(new String[0]);
+    pending.clear();
+    for (int i = 0; i < list.length; i++) {
+      send(list[i], url);
     }
   }
 
@@ -240,6 +253,8 @@ public class TVConn {
             "\"offer\": " + device.localChannelId + "," +
             "\"url\": \"" + url + "\"}";
     byte[] dataBytes = data.getBytes("UTF-8");
+    Log.d(TAG, "data to connect: " + data);
+    Log.d(TAG, "send to : " + device.remoteAddress + "," + device.remotePort);
     return new DatagramPacket(dataBytes, dataBytes.length, device.remoteAddress,
             device.remotePort);
   }
@@ -259,7 +274,7 @@ public class TVConn {
     return connectedDevice;
   }
 
-  public void disconnect() {
+  public void disconnect(final String url) {
     if (null == connectedDevice) {
       return;
     }
@@ -275,8 +290,7 @@ public class TVConn {
         }
         fireStateUpate(connectedDevice);
         try {
-          DatagramPacket req = createSessionClosePacket(connectedDevice,
-                  REMOTE_URL);
+          DatagramPacket req = createSessionClosePacket(connectedDevice, url);
           udpSocket.send(req);
         } catch (IOException e) {
           e.printStackTrace();
@@ -286,7 +300,7 @@ public class TVConn {
     t.start();
   }
 
-  public void connectToDevice(final TVDevice device) {
+  public void connectToDevice(final TVDevice device, final String url) {
     if (device.equals(connectingDevice)) {
       Log.i(TAG, "bypass connect request to connecting device: " + device.name);
       return;
@@ -295,11 +309,10 @@ public class TVConn {
 
       @Override
       public void run() {
-        Log.i(TAG, "try to connect to device: " + device.name);
+        Log.i(TAG, "try to connect to device: " + device.name + ", url: " + url);
         long channelId = System.currentTimeMillis();
         device.localChannelId = channelId;
-        device.connectingUrl = REMOTE_URL;
-        Log.d(TAG, "channelId: " + channelId + ", url: " + REMOTE_URL);
+        device.connectingUrl = url;
         if (null != connectingDevice) {
           connectingDevice.state = TVDevice.State.SCANNED;
           fireStateUpate(connectingDevice);
@@ -310,7 +323,8 @@ public class TVConn {
         }
         fireStateUpate(connectingDevice);
         try {
-          DatagramPacket req = createRequestSessionPacket(device, REMOTE_URL);
+          DatagramPacket req = createRequestSessionPacket(device, url);
+          Log.d(TAG, "send");
           udpSocket.send(req);
         } catch (IOException e) {
           e.printStackTrace();
@@ -338,16 +352,18 @@ public class TVConn {
                   "device.");
           return;
         }
-        Log.i(TAG, "answer got from device: " + connectingDevice.name);
+        Log.i(TAG, "answer got from device: " + connectingDevice.name +
+                ", url: " + connectingDevice.connectingUrl);
+        String connectingUrl = connectingDevice.connectingUrl;
         synchronized (TVConn.class) {
           connectedDevice = connectingDevice;
           connectedDevice.state = TVDevice.State.CONNECTED;
-          connectedDevice.channelMap.put(connectedDevice.connectingUrl,
+          connectedDevice.channelMap.put(connectingUrl,
                   new Channel(connectedDevice.localChannelId, obj.getLong("answer")));
           fireStateUpate(connectedDevice);
           connectingDevice = null;
         }
-        flashQueue();
+        flashQueue(connectingUrl);
       }
     } catch (JSONException e) {
       e.printStackTrace();

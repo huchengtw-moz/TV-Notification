@@ -9,6 +9,8 @@ import com.mozilla.tv.notifications.tv.TVConnService;
 
 public class IntentUtils {
 
+  public static final String REMOTE_URL = "app://tv-notification-receiver.gaiamobile.org/index.html";
+
   public static void sendEmailIntent(Context ctx, String type, String body,
           String sender, String number) {
     Intent i = new Intent(ctx, MailBridgeService.class);
@@ -26,6 +28,7 @@ public class IntentUtils {
   public static void sendTVIntent(Context ctx, String type, String body,
           String sender, String number) {
     Intent i = new Intent(ctx, TVBridgeService.class);
+    i.putExtra("url", REMOTE_URL);
     i.putExtra("type", type);
     if (null != sender) {
       i.putExtra("sender", sender);
