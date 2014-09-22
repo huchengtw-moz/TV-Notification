@@ -1,8 +1,20 @@
 package com.mozilla.tv.notifications.tv;
 
 import java.net.InetAddress;
+import java.util.Hashtable;
 
 public class TVDevice {
+  
+  public static class Channel {
+    public long local;
+    public long remote;
+    
+    public Channel(long l, long r) {
+      local = l;
+      remote = r;
+    }
+  }
+  
   public enum State {
     SCANNED, CONNECTING, CONNECTED
   }
@@ -12,7 +24,8 @@ public class TVDevice {
   public int remotePort;
   public long lastPinged;
   public long localChannelId;
-  public long remoteChannelId;
+  public String connectingUrl;
+  public Hashtable<String, Channel> channelMap = new Hashtable<String, Channel>();
   public State state = State.SCANNED;
 
   @Override

@@ -19,6 +19,8 @@ import org.json.JSONObject;
 import android.os.Build;
 import android.util.Log;
 
+import com.mozilla.tv.notifications.tv.TVDevice.Channel;
+
 public class TVConn {
 
   /**
@@ -176,11 +178,11 @@ public class TVConn {
     this.autoConnect = autoConnect;
   }
 
-  private DatagramPacket createDataPacket(String msg) throws JSONException, UnsupportedEncodingException {
+  private DatagramPacket createDataPacket(String msg, String url) throws JSONException, UnsupportedEncodingException {
     JSONObject jsObj = new JSONObject();
     jsObj.put("type", "ondata");
     synchronized (TVConn.class) {
-      jsObj.put("channelId", connectedDevice.remoteChannelId);
+      jsObj.put("channelId", connectedDevice.channelMap.get(url).remote);
       jsObj.put("message", msg);
       String data = jsObj.toString();
       final byte[] dataBytes = data.getBytes("UTF-8");
@@ -210,7 +212,7 @@ public class TVConn {
       @Override
       public void run() {
         try {
-          DatagramPacket packet = createDataPacket(data);
+          DatagramPacket packet = createDataPacket(data, REMOTE_URL);
           udpSocket.send(packet);
         } catch (IOException e) {
           e.printStackTrace();
@@ -231,22 +233,22 @@ public class TVConn {
     }
   }
 
-  private DatagramPacket createRequestSessionPacket(TVDevice device)
+  private DatagramPacket createRequestSessionPacket(TVDevice device, String url)
           throws UnsupportedEncodingException {
 
     String data = "{\"type\": \"requestSession\"," +
             "\"offer\": " + device.localChannelId + "," +
-            "\"url\": \"" + REMOTE_URL + "\"}";
+            "\"url\": \"" + url + "\"}";
     byte[] dataBytes = data.getBytes("UTF-8");
     return new DatagramPacket(dataBytes, dataBytes.length, device.remoteAddress,
             device.remotePort);
   }
 
-  private DatagramPacket createSessionClosePacket(TVDevice device) throws
-          UnsupportedEncodingException {
+  private DatagramPacket createSessionClosePacket(TVDevice device, String url)
+          throws UnsupportedEncodingException {
 
     String data = "{\"type\": \"sessionClose\"," +
-            "\"channelId\": " + device.localChannelId + "}";
+            "\"channelId\": " + device.channelMap.get(url).local + "}";
     byte[] dataBytes = data.getBytes("UTF-8");
     return new DatagramPacket(dataBytes, dataBytes.length, device.remoteAddress,
             device.remotePort);
@@ -256,7 +258,7 @@ public class TVConn {
   public TVDevice getConnectedDevice() {
     return connectedDevice;
   }
-  
+
   public void disconnect() {
     if (null == connectedDevice) {
       return;
@@ -273,7 +275,8 @@ public class TVConn {
         }
         fireStateUpate(connectedDevice);
         try {
-          DatagramPacket req = createSessionClosePacket(connectedDevice);
+          DatagramPacket req = createSessionClosePacket(connectedDevice,
+                  REMOTE_URL);
           udpSocket.send(req);
         } catch (IOException e) {
           e.printStackTrace();
@@ -284,6 +287,10 @@ public class TVConn {
   }
 
   public void connectToDevice(final TVDevice device) {
+    if (device.equals(connectingDevice)) {
+      Log.i(TAG, "bypass connect request to connecting device: " + device.name);
+      return;
+    }
     Thread t = new Thread(new Runnable() {
 
       @Override
@@ -291,6 +298,8 @@ public class TVConn {
         Log.i(TAG, "try to connect to device: " + device.name);
         long channelId = System.currentTimeMillis();
         device.localChannelId = channelId;
+        device.connectingUrl = REMOTE_URL;
+        Log.d(TAG, "channelId: " + channelId + ", url: " + REMOTE_URL);
         if (null != connectingDevice) {
           connectingDevice.state = TVDevice.State.SCANNED;
           fireStateUpate(connectingDevice);
@@ -301,7 +310,7 @@ public class TVConn {
         }
         fireStateUpate(connectingDevice);
         try {
-          DatagramPacket req = createRequestSessionPacket(device);
+          DatagramPacket req = createRequestSessionPacket(device, REMOTE_URL);
           udpSocket.send(req);
         } catch (IOException e) {
           e.printStackTrace();
@@ -333,8 +342,9 @@ public class TVConn {
         synchronized (TVConn.class) {
           connectedDevice = connectingDevice;
           connectedDevice.state = TVDevice.State.CONNECTED;
+          connectedDevice.channelMap.put(connectedDevice.connectingUrl,
+                  new Channel(connectedDevice.localChannelId, obj.getLong("answer")));
           fireStateUpate(connectedDevice);
-          connectedDevice.remoteChannelId = obj.getLong("answer");
           connectingDevice = null;
         }
         flashQueue();
