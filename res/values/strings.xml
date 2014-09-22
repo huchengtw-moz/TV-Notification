@@ -6,6 +6,7 @@
     <string name="stop_button">Stop TV Service</string>
     <string name="auto_first">Auto Connect</string>
     <string name="connect_button">Connect</string>
+    <string name="disconnect_button">Disconnect</string>
     <string name="device_list_title">Device Lists</string>
 
 </resources>

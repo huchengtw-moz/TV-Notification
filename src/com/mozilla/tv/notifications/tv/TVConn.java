@@ -242,6 +242,47 @@ public class TVConn {
             device.remotePort);
   }
 
+  private DatagramPacket createSessionClosePacket(TVDevice device) throws
+          UnsupportedEncodingException {
+
+    String data = "{\"type\": \"sessionClose\"," +
+            "\"channelId\": " + device.localChannelId + "}";
+    byte[] dataBytes = data.getBytes("UTF-8");
+    return new DatagramPacket(dataBytes, dataBytes.length, device.remoteAddress,
+            device.remotePort);
+
+  }
+
+  public TVDevice getConnectedDevice() {
+    return connectedDevice;
+  }
+  
+  public void disconnect() {
+    if (null == connectedDevice) {
+      return;
+    }
+
+    Thread t = new Thread(new Runnable() {
+
+      @Override
+      public void run() {
+        Log.i(TAG, "try to disconnect to device: " + connectedDevice.name);
+
+        synchronized (TVConn.class) {
+          connectedDevice.state = TVDevice.State.SCANNED;
+        }
+        fireStateUpate(connectedDevice);
+        try {
+          DatagramPacket req = createSessionClosePacket(connectedDevice);
+          udpSocket.send(req);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    });
+    t.start();
+  }
+
   public void connectToDevice(final TVDevice device) {
     Thread t = new Thread(new Runnable() {
 

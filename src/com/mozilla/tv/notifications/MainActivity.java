@@ -80,8 +80,20 @@ public class MainActivity extends Activity {
       @Override
       public void onClick(View arg0) {
         TVDevice device = adapter.getSelectedDevice();
-        if (null != device) {
+        if (device == null) {
+          return;
+        }
+
+        if (device.equals(TVConn.get().getConnectedDevice())) {
+          TVConn.get().disconnect();
+          connectButton.setText(R.string.connect_button);
+        } else if (TVConn.get().isConnected()) {
+          TVConn.get().disconnect();
           TVConn.get().connectToDevice(device);
+          connectButton.setText(R.string.disconnect_button);
+        } else {
+          TVConn.get().connectToDevice(device);
+          connectButton.setText(R.string.disconnect_button);
         }
       }
     });
