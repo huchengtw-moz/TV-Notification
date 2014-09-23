@@ -42,7 +42,7 @@ public class TVConn {
   private static final int UPDATE_PORT = 50625;
   private static final byte ADDRESS[] = { (byte) 224, 0, 0, 115 };
   private static final int BROADCAST_INTERVAL = 2000;
-  private static final int DEVICE_TTL = 20000;
+  private static final int DEVICE_TTL = 6000;
 
   private static TVConn instance;
 
