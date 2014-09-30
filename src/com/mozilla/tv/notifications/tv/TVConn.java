@@ -42,7 +42,7 @@ public class TVConn {
   private static final int UPDATE_PORT = 50625;
   private static final byte ADDRESS[] = { (byte) 224, 0, 0, 115 };
   private static final int BROADCAST_INTERVAL = 2000;
-  private static final int DEVICE_TTL = 6000;
+  private static final int DEVICE_TTL = 10000;
 
   private static TVConn instance;
 
@@ -257,7 +257,6 @@ public class TVConn {
             "\"offer\": " + device.localChannelId + "," +
             "\"url\": \"" + url + "\"}";
     byte[] dataBytes = data.getBytes("UTF-8");
-    Log.d(TAG, "data to connect: " + data);
     Log.d(TAG, "send to : " + device.remoteAddress + "," + device.remotePort);
     return new DatagramPacket(dataBytes, dataBytes.length, device.remoteAddress,
             device.remotePort);

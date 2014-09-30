@@ -19,7 +19,7 @@ public class IntentUtils {
       i.putExtra("sender", sender);
     }
     i.putExtra("number", number);
-    if (null != sender) {
+    if (null != body) {
       i.putExtra("body", body);
     }
     ctx.startService(i);
@@ -41,7 +41,7 @@ public class IntentUtils {
     if (null != number) {
       i.putExtra("number", number);
     }
-    if (null != sender) {
+    if (null != body) {
       i.putExtra("body", body);
     }
     ctx.startService(i);
